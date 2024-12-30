@@ -1,15 +1,21 @@
-﻿use std::fmt::{Display, Formatter, Result};
+use std::fmt::{Display, Formatter, Result};
 
 #[derive(Clone)]
 pub struct SyntaxTreeNode {
     pub value: Option<String>,
     pub type_: SyntaxTreeNodeType,
-    pub children: Vec<SyntaxTreeNode>
+    pub children: Vec<SyntaxTreeNode>,
 }
 
 impl Display for SyntaxTreeNode {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{{type: {}, value: {:?}, children: {}}}", self.type_, self.value, self.children.len())
+        write!(
+            f,
+            "{{type: {}, value: {:?}, children: {}}}",
+            self.type_,
+            self.value,
+            self.children.len()
+        )
     }
 }
 
@@ -25,7 +31,7 @@ pub enum SyntaxTreeNodeType {
     EqualityCheck,
     Branch,
     Comment,
-    Collection
+    Collection,
 }
 
 impl Display for SyntaxTreeNodeType {

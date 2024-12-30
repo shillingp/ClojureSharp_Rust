@@ -1,44 +1,55 @@
-﻿use crate::syntax_tree::syntax_tree_node::{SyntaxTreeNode, SyntaxTreeNodeType};
+use crate::syntax_tree::syntax_tree_node::{SyntaxTreeNode, SyntaxTreeNodeType};
 use crate::tokenizer::token::{Token, TokenType};
 
 pub(crate) fn parse(source_tokens: Vec<Token>) -> Result<SyntaxTreeNode, String> {
     if !matches!(source_tokens[0].type_, TokenType::NamespaceToken)
-        || !matches!(source_tokens[1].type_, TokenType::NameIdentifierToken) {
+        || !matches!(source_tokens[1].type_, TokenType::NameIdentifierToken)
+    {
         return Err(String::from("sd"));
     }
 
     let mut current_index: usize = 0;
     let mut internal_nodes: Vec<SyntaxTreeNode> = Vec::new();
 
-    while current_index < source_tokens.len() as usize {
-        match (source_tokens.iter().nth(current_index),
-               source_tokens.iter().nth(current_index + 1),
-               source_tokens.iter().nth(current_index + 2)) {
+    while current_index < source_tokens.len() {
+        match (
+            source_tokens.iter().nth(current_index),
+            source_tokens.iter().nth(current_index + 1),
+            source_tokens.iter().nth(current_index + 2),
+        ) {
             (Some(first), Some(second), Some(third))
-            if matches!(first.type_, TokenType::TypeDeclarationToken)
-                && matches!(second.type_, TokenType::NameIdentifierToken)
-                && matches!(third.type_, TokenType::OpenParenthesisToken) => {
-                    let end_index = find_index_of_last_closing_scope(&source_tokens, current_index)
-                        .expect("scope end location not found");
+                if matches!(first.type_, TokenType::TypeDeclarationToken)
+                    && matches!(second.type_, TokenType::NameIdentifierToken)
+                    && matches!(third.type_, TokenType::OpenParenthesisToken) =>
+            {
+                let end_index = find_index_of_last_closing_scope(&source_tokens, current_index)
+                    .expect("scope end location not found");
 
-                    internal_nodes.push(parse_method(&source_tokens[current_index..=end_index]));
-                    current_index = end_index;
-                }
+                internal_nodes.push(parse_method(&source_tokens[current_index..=end_index]));
+                current_index = end_index;
+            }
             (Some(first), Some(second), _)
-            if matches!(first.type_, TokenType::ClassToken)
-                && matches!(second.type_, TokenType::NameIdentifierToken) => {
+                if matches!(first.type_, TokenType::ClassToken)
+                    && matches!(second.type_, TokenType::NameIdentifierToken) =>
+            {
                 todo!()
-            },
+            }
             (Some(first), Some(second), _)
-            if matches!(first.type_, TokenType::NameIdentifierToken)
-                && matches!(second.type_, TokenType::OpenParenthesisToken) => {
-                let semicolon_index = current_index + source_tokens.iter().skip(current_index)
-                    .position(|token| matches!(token.type_, TokenType::SemicolonToken))
-                    .expect("semicolon location not found");
+                if matches!(first.type_, TokenType::NameIdentifierToken)
+                    && matches!(second.type_, TokenType::OpenParenthesisToken) =>
+            {
+                let semicolon_index = current_index
+                    + source_tokens
+                        .iter()
+                        .skip(current_index)
+                        .position(|token| matches!(token.type_, TokenType::SemicolonToken))
+                        .expect("semicolon location not found");
 
-                internal_nodes.push(parse_expression(&source_tokens[current_index..semicolon_index]));
+                internal_nodes.push(parse_expression(
+                    &source_tokens[current_index..semicolon_index],
+                ));
                 current_index = semicolon_index;
-            },
+            }
             _ => current_index += 1,
         }
     }
@@ -46,11 +57,14 @@ pub(crate) fn parse(source_tokens: Vec<Token>) -> Result<SyntaxTreeNode, String>
     Ok(SyntaxTreeNode {
         value: source_tokens[1].value.clone(),
         type_: SyntaxTreeNodeType::Namespace,
-        children: internal_nodes
+        children: internal_nodes,
     })
 }
 
-fn find_index_of_last_closing_scope(source_tokens: &[Token], index_to_start: usize) -> Option<usize> {
+fn find_index_of_last_closing_scope(
+    source_tokens: &[Token],
+    index_to_start: usize,
+) -> Option<usize> {
     let mut open_scope_count: u32 = 0;
 
     for (index, token) in source_tokens.iter().skip(index_to_start).enumerate() {
@@ -72,18 +86,22 @@ fn find_index_of_last_closing_scope(source_tokens: &[Token], index_to_start: usi
 }
 
 fn parse_method(method_tokens: &[Token]) -> SyntaxTreeNode {
-    let argument_open_parenthesis_index: usize = method_tokens.iter()
+    let argument_open_parenthesis_index: usize = method_tokens
+        .iter()
         .position(|token| matches!(token.type_, TokenType::OpenParenthesisToken))
         .unwrap();
-    let argument_close_parenthesis_index: usize = method_tokens.iter()
+    let argument_close_parenthesis_index: usize = method_tokens
+        .iter()
         .position(|token| matches!(token.type_, TokenType::CloseParenthesisToken))
         .unwrap();
-    let method_argument_tokens: &[Token] = &method_tokens[(argument_open_parenthesis_index+1)..argument_close_parenthesis_index];
+    let method_argument_tokens: &[Token] =
+        &method_tokens[(argument_open_parenthesis_index + 1)..argument_close_parenthesis_index];
 
-    let method_scope_open_index: usize = method_tokens.iter()
+    let method_scope_open_index: usize = method_tokens
+        .iter()
         .position(|token| matches!(token.type_, TokenType::OpenScopeToken))
         .unwrap();
-    let method_body_tokens: &[Token] = &method_tokens[method_scope_open_index+1..];
+    let method_body_tokens: &[Token] = &method_tokens[method_scope_open_index + 1..];
 
     let mut method_nodes = Vec::new();
     method_nodes.extend(parse_method_arguments(method_argument_tokens));
@@ -92,12 +110,13 @@ fn parse_method(method_tokens: &[Token]) -> SyntaxTreeNode {
     SyntaxTreeNode {
         value: method_tokens[1].value.clone(),
         type_: SyntaxTreeNodeType::Method,
-        children: method_nodes
+        children: method_nodes,
     }
 }
 
 fn parse_method_arguments(argument_tokens: &[Token]) -> Vec<SyntaxTreeNode> {
-    argument_tokens.iter()
+    argument_tokens
+        .iter()
         .filter(|token| matches!(token.type_, TokenType::NameIdentifierToken))
         .map(|token| SyntaxTreeNode {
             value: token.value.clone(),
@@ -117,7 +136,7 @@ fn parse_internal_scope(internal_tokens: &[Token]) -> Vec<SyntaxTreeNode> {
         match token.type_ {
             TokenType::ReturnToken | TokenType::CloseScopeToken => {
                 token_index += 1;
-            },
+            }
             TokenType::CommentToken => {
                 scope_nodes.push(SyntaxTreeNode {
                     value: token.value.clone(),
@@ -127,20 +146,26 @@ fn parse_internal_scope(internal_tokens: &[Token]) -> Vec<SyntaxTreeNode> {
                 token_index += 1;
             }
             _ => {
-                let mut end_of_scope_index: usize = token_index + internal_tokens
-                    .iter().skip(token_index)
-                    .position(|token| matches!(token.type_, TokenType::SemicolonToken))
-                    .unwrap_or(0);
+                let mut end_of_scope_index: usize = token_index
+                    + internal_tokens
+                        .iter()
+                        .skip(token_index)
+                        .position(|token| matches!(token.type_, TokenType::SemicolonToken))
+                        .unwrap_or(0);
 
                 let open_scope_index: Option<usize> = internal_tokens
-                    .iter().skip(token_index)
+                    .iter()
+                    .skip(token_index)
                     .position(|token| matches!(token.type_, TokenType::OpenScopeToken));
 
                 if open_scope_index.is_some_and(|open| (token_index + open) < end_of_scope_index) {
-                    end_of_scope_index = find_index_of_last_closing_scope(&internal_tokens, token_index).unwrap();
+                    end_of_scope_index =
+                        find_index_of_last_closing_scope(&internal_tokens, token_index).unwrap();
                 }
 
-                scope_nodes.push(parse_expression(&internal_tokens[token_index..=end_of_scope_index]));
+                scope_nodes.push(parse_expression(
+                    &internal_tokens[token_index..=end_of_scope_index],
+                ));
 
                 token_index = end_of_scope_index + 1;
             }
@@ -164,7 +189,8 @@ fn group_consecutive_assignments(body_nodes: Vec<SyntaxTreeNode>) -> Vec<SyntaxT
         }
 
         let mut j: usize = i + 1;
-        while j < body_nodes.len() && matches!(body_nodes[j].type_, SyntaxTreeNodeType::Assignment) {
+        while j < body_nodes.len() && matches!(body_nodes[j].type_, SyntaxTreeNodeType::Assignment)
+        {
             j += 1;
         }
 
@@ -186,8 +212,8 @@ fn group_consecutive_assignments(body_nodes: Vec<SyntaxTreeNode>) -> Vec<SyntaxT
 
 fn parse_expression(expression_tokens: &[Token]) -> SyntaxTreeNode {
     let expression_tokens = match expression_tokens.last().unwrap().type_ {
-        TokenType::SemicolonToken => &expression_tokens[..(expression_tokens.len()-1)],
-        _ => expression_tokens
+        TokenType::SemicolonToken => &expression_tokens[..(expression_tokens.len() - 1)],
+        _ => expression_tokens,
     };
 
     if expression_tokens.len() == 1 {
@@ -195,7 +221,7 @@ fn parse_expression(expression_tokens: &[Token]) -> SyntaxTreeNode {
             value: expression_tokens[0].value.clone(),
             type_: SyntaxTreeNodeType::Literal,
             children: Vec::new(),
-        }
+        };
     }
 
     if matches!(expression_tokens[0].type_, TokenType::ReturnToken) {
@@ -203,133 +229,143 @@ fn parse_expression(expression_tokens: &[Token]) -> SyntaxTreeNode {
     }
 
     if matches!(expression_tokens[0].type_, TokenType::OpenParenthesisToken) {
-        if let Some(close_paren_index) = expression_tokens.iter()
-            .rposition(|token| matches!(token.type_, TokenType::CloseParenthesisToken)) {
+        if let Some(close_paren_index) = expression_tokens
+            .iter()
+            .rposition(|token| matches!(token.type_, TokenType::CloseParenthesisToken))
+        {
             return parse_expression(&expression_tokens[1..close_paren_index]);
         }
     }
 
-    if matches!(&expression_tokens[0], Token { type_: TokenType::BranchingOperatorToken, value: Some(i)} if i == "if") {
-        if let Some(close_paren_index) = expression_tokens.iter().position(|token| matches!(token.type_, TokenType::CloseParenthesisToken)) {
-            let mut children = Vec::from([parse_expression(&expression_tokens[2..close_paren_index])]);
-            children.extend(parse_internal_scope(&expression_tokens[close_paren_index+2..]));
+    if matches!(&expression_tokens[0], Token { type_: TokenType::BranchingOperatorToken, value: Some(i)} if i == "if")
+    {
+        if let Some(close_paren_index) = expression_tokens
+            .iter()
+            .position(|token| matches!(token.type_, TokenType::CloseParenthesisToken))
+        {
+            let mut children =
+                Vec::from([parse_expression(&expression_tokens[2..close_paren_index])]);
+            children.extend(parse_internal_scope(
+                &expression_tokens[close_paren_index + 2..],
+            ));
 
             return SyntaxTreeNode {
                 value: expression_tokens[0].value.clone(),
                 type_: SyntaxTreeNodeType::Branch,
                 children,
-            }
+            };
         }
     }
 
-    if matches!(&expression_tokens[0], Token { type_: TokenType::BranchingOperatorToken, value: Some(i)} if i == "else") {
+    if matches!(&expression_tokens[0], Token { type_: TokenType::BranchingOperatorToken, value: Some(i)} if i == "else")
+    {
         return SyntaxTreeNode {
             value: expression_tokens[0].value.clone(),
             type_: SyntaxTreeNodeType::Branch,
             children: parse_internal_scope(&expression_tokens[2..]),
-        }
+        };
     }
-    /*
-    if (expressionTokens[0] is { Type: TokenType.BranchingOperatorToken, Value: "if" }
-            && expressionTokens.IndexOf(token => token is { Type: TokenType.CloseParenthesisToken }) is { } branchCheckParenthesisIndex and > 0)
-            return new SyntaxTreeNode
-            {
-                Value = expressionTokens[0].Value!,
-                Type = SyntaxTreeNodeType.Branch,
-                Children =
-                [
-                    ParseExpression(expressionTokens[2..branchCheckParenthesisIndex]),
-                    ..ParseInternalScope(expressionTokens[(branchCheckParenthesisIndex + 2)..])
-                ]
-            };
 
-        if (expressionTokens[0] is { Type: TokenType.BranchingOperatorToken, Value: "else" })
-            return new SyntaxTreeNode
-            {
-                Value = expressionTokens[0].Value!,
-                Type = SyntaxTreeNodeType.Branch,
-                Children = ParseInternalScope(expressionTokens[2..]).ToArray()
-            };
-     */
-
-    if let Some(assignment_index) = expression_tokens.iter()
-        .position(|token| matches!(token.type_, TokenType::AssignmentOperatorToken)) {
-        if matches!(expression_tokens[assignment_index-1].type_, TokenType::NameIdentifierToken) {
+    if let Some(assignment_index) = expression_tokens
+        .iter()
+        .position(|token| matches!(token.type_, TokenType::AssignmentOperatorToken))
+    {
+        if matches!(
+            expression_tokens[assignment_index - 1].type_,
+            TokenType::NameIdentifierToken
+        ) {
             let child_assignment_node = match expression_tokens[assignment_index].value {
                 None => parse_expression(&expression_tokens[(assignment_index + 1)..]),
                 Some(_) => SyntaxTreeNode {
                     value: Some("=".to_string()),
                     type_: SyntaxTreeNodeType::Expression,
                     children: Vec::from([
-                        parse_expression(&expression_tokens[assignment_index-1..assignment_index]),
-                        parse_expression(&expression_tokens[assignment_index+1..]),
+                        parse_expression(
+                            &expression_tokens[assignment_index - 1..assignment_index],
+                        ),
+                        parse_expression(&expression_tokens[assignment_index + 1..]),
                     ]),
-                }
+                },
             };
 
             return SyntaxTreeNode {
-                value: expression_tokens[assignment_index-1].value.clone(),
+                value: expression_tokens[assignment_index - 1].value.clone(),
                 type_: SyntaxTreeNodeType::Assignment,
                 children: Vec::from([child_assignment_node]),
-            }
+            };
         }
     }
 
     if matches!(expression_tokens[0].type_, TokenType::NameIdentifierToken)
         && matches!(expression_tokens[1].type_, TokenType::OpenParenthesisToken)
-        && matches!(expression_tokens.last().unwrap().type_, TokenType::CloseParenthesisToken) {
+        && matches!(
+            expression_tokens.last().unwrap().type_,
+            TokenType::CloseParenthesisToken
+        )
+    {
         return SyntaxTreeNode {
             value: expression_tokens[0].value.clone(),
             type_: SyntaxTreeNodeType::Expression,
-            children: parse_collection(&expression_tokens[2..expression_tokens.len()-1]),
-        }
+            children: parse_collection(&expression_tokens[2..expression_tokens.len() - 1]),
+        };
     }
 
-
     if matches!(expression_tokens[0].type_, TokenType::OpenCollectionToken)
-        && matches!(expression_tokens[expression_tokens.len()-1].type_, TokenType::CloseCollectionToken) {
+        && matches!(
+            expression_tokens[expression_tokens.len() - 1].type_,
+            TokenType::CloseCollectionToken
+        )
+    {
         return SyntaxTreeNode {
             value: None,
             type_: SyntaxTreeNodeType::Collection,
-            children: parse_collection(&expression_tokens[1..expression_tokens.len()-1])
-        }
+            children: parse_collection(&expression_tokens[1..expression_tokens.len() - 1]),
+        };
     }
 
-    if let Some(numeric_operator_index) = expression_tokens.iter().position(|token| matches!(token.type_, TokenType::NumericOperationToken)) {
+    if let Some(numeric_operator_index) = expression_tokens
+        .iter()
+        .position(|token| matches!(token.type_, TokenType::NumericOperationToken))
+    {
         return SyntaxTreeNode {
             value: expression_tokens[numeric_operator_index].value.clone(),
             type_: SyntaxTreeNodeType::Expression,
             children: Vec::from([
                 parse_expression(&expression_tokens[..numeric_operator_index]),
-                parse_expression(&expression_tokens[numeric_operator_index+1..]),
+                parse_expression(&expression_tokens[numeric_operator_index + 1..]),
             ]),
-        }
+        };
     }
 
-    if let Some(equality_index) = expression_tokens.iter()
-        .position(|token| matches!(token.type_, TokenType::EqualityOperatorToken)) {
+    if let Some(equality_index) = expression_tokens
+        .iter()
+        .position(|token| matches!(token.type_, TokenType::EqualityOperatorToken))
+    {
         return SyntaxTreeNode {
             value: Some("=".to_string()),
             type_: SyntaxTreeNodeType::EqualityCheck,
             children: Vec::from([
                 parse_expression(&expression_tokens[..equality_index]),
-                parse_expression(&expression_tokens[(equality_index+1)..]),
+                parse_expression(&expression_tokens[(equality_index + 1)..]),
             ]),
-        }
+        };
     }
 
     if matches!(expression_tokens[0].type_, TokenType::NameIdentifierToken)
         && matches!(expression_tokens[1].type_, TokenType::DotMethodToken)
-        && matches!(expression_tokens[2].type_, TokenType::NameIdentifierToken) {
+        && matches!(expression_tokens[2].type_, TokenType::NameIdentifierToken)
+    {
         let mut children: Vec<SyntaxTreeNode> = Vec::new();
         children.push(parse_expression(&expression_tokens[0..=0]));
-        children.extend(parse_collection(&expression_tokens[4..expression_tokens.len()-1]));
+        children.extend(parse_collection(
+            &expression_tokens[4..expression_tokens.len() - 1],
+        ));
 
         return SyntaxTreeNode {
             value: expression_tokens[2].value.clone(),
             type_: SyntaxTreeNodeType::Expression,
-            children: children,
-        }
+            children,
+        };
     }
 
     panic!("Failed to parse expressions")
@@ -340,7 +376,9 @@ fn parse_collection(collection_tokens: &[Token]) -> Vec<SyntaxTreeNode> {
 
     let mut i = 0;
     for j in i..collection_tokens.len() + 1 {
-        if j < collection_tokens.len() && !matches!(collection_tokens[j].type_, TokenType::CommaToken) {
+        if j < collection_tokens.len()
+            && !matches!(collection_tokens[j].type_, TokenType::CommaToken)
+        {
             continue;
         }
 

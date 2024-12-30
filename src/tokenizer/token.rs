@@ -1,6 +1,6 @@
-﻿pub struct Token {
+pub struct Token {
     pub type_: TokenType,
-    pub value: Option<String>
+    pub value: Option<String>,
 }
 
 pub enum TokenType {
