@@ -10,8 +10,8 @@ pub mod syntax_tree;
 pub mod transpiler;
 
 fn main() {
-    let file_path = Path::new("./src/input/source.cs");
-    let contents: String = fs::read_to_string(file_path)
+    let input_file_path = Path::new("./src/input/source.cs");
+    let contents: String = fs::read_to_string(input_file_path)
         .expect("Should have been able to read the file");
 
     let source_code_tokens: Vec<Token> = tokenizer::tokenizer::tokenize(contents);
@@ -24,7 +24,11 @@ fn main() {
     let prettifier = transpiler::prettifier::Prettifier::new(' ', 4);
     let pretty_transpiled_code: String = prettifier.prettify(transpiled_code);
 
-    println!("{}", "-".repeat(30usize));
-    println!("{}", pretty_transpiled_code);
-    println!("{}", "-".repeat(30usize));
+    let output_file_path = Path::new("./src/output/result.clj");
+    fs::write(output_file_path, pretty_transpiled_code)
+        .expect("Should have been able to write output file");
+
+    // println!("{}", "-".repeat(30usize));
+    // println!("{}", pretty_transpiled_code);
+    // println!("{}", "-".repeat(30usize));
 }
