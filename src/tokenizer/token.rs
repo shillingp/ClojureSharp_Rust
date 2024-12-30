@@ -3,6 +3,13 @@ pub struct Token {
     pub value: Option<String>,
 }
 
+impl ToString for Token {
+    fn to_string(&self) -> String {
+        format!("{{type: {:?}, value: {:?}}}", self.type_, self.value)
+    }
+}
+
+#[derive(Debug)]
 pub enum TokenType {
     NamespaceToken,
     ClassToken,

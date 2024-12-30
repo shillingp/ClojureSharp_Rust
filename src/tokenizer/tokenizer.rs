@@ -14,7 +14,7 @@ pub fn tokenize(source_code_text: String) -> Vec<Token> {
         }
 
         if *character == '/' && source_queue.peek().is_some_and(|c: &&char| **c == '/') {
-            let (parsed_comment, parsed_length) =
+            let (parsed_comment, parsed_length): (String, usize) =
                 parse_with_predicate(*character, source_queue.clone(), |c| {
                     **c != '\r' && **c != '\n'
                 });

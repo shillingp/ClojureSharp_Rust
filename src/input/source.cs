@@ -7,7 +7,7 @@
         List<int> stuff = [1, (1 + 1), 3];
         stuff.AddRange(4, 5);
 
-        // thing
+        '// thing
 
         if (foo == 6)
             return foo;
