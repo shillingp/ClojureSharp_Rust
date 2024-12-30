@@ -27,8 +27,4 @@ fn main() {
     let output_file_path = Path::new("./src/output/result.clj");
     fs::write(output_file_path, pretty_transpiled_code)
         .expect("Should have been able to write output file");
-
-    // println!("{}", "-".repeat(30usize));
-    // println!("{}", pretty_transpiled_code);
-    // println!("{}", "-".repeat(30usize));
 }
