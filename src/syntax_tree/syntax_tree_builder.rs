@@ -209,6 +209,49 @@ fn parse_expression(expression_tokens: &[Token]) -> SyntaxTreeNode {
         }
     }
 
+    if matches!(&expression_tokens[0], Token { type_: TokenType::BranchingOperatorToken, value: Some(i)} if i == "if") {
+        if let Some(close_paren_index) = expression_tokens.iter().position(|token| matches!(token.type_, TokenType::CloseParenthesisToken)) {
+            let mut children = Vec::from([parse_expression(&expression_tokens[2..close_paren_index])]);
+            children.extend(parse_internal_scope(&expression_tokens[close_paren_index+2..]));
+
+            return SyntaxTreeNode {
+                value: expression_tokens[0].value.clone(),
+                type_: SyntaxTreeNodeType::Branch,
+                children,
+            }
+        }
+    }
+
+    if matches!(&expression_tokens[0], Token { type_: TokenType::BranchingOperatorToken, value: Some(i)} if i == "else") {
+        return SyntaxTreeNode {
+            value: expression_tokens[0].value.clone(),
+            type_: SyntaxTreeNodeType::Branch,
+            children: parse_internal_scope(&expression_tokens[2..]),
+        }
+    }
+    /*
+    if (expressionTokens[0] is { Type: TokenType.BranchingOperatorToken, Value: "if" }
+            && expressionTokens.IndexOf(token => token is { Type: TokenType.CloseParenthesisToken }) is { } branchCheckParenthesisIndex and > 0)
+            return new SyntaxTreeNode
+            {
+                Value = expressionTokens[0].Value!,
+                Type = SyntaxTreeNodeType.Branch,
+                Children =
+                [
+                    ParseExpression(expressionTokens[2..branchCheckParenthesisIndex]),
+                    ..ParseInternalScope(expressionTokens[(branchCheckParenthesisIndex + 2)..])
+                ]
+            };
+
+        if (expressionTokens[0] is { Type: TokenType.BranchingOperatorToken, Value: "else" })
+            return new SyntaxTreeNode
+            {
+                Value = expressionTokens[0].Value!,
+                Type = SyntaxTreeNodeType.Branch,
+                Children = ParseInternalScope(expressionTokens[2..]).ToArray()
+            };
+     */
+
     if let Some(assignment_index) = expression_tokens.iter()
         .position(|token| matches!(token.type_, TokenType::AssignmentOperatorToken)) {
         if matches!(expression_tokens[assignment_index-1].type_, TokenType::NameIdentifierToken) {
@@ -263,9 +306,10 @@ fn parse_expression(expression_tokens: &[Token]) -> SyntaxTreeNode {
         }
     }
 
-    if let Some(equality_index) = expression_tokens.iter().position(|token| matches!(token.type_, TokenType::EqualityOperatorToken)) {
+    if let Some(equality_index) = expression_tokens.iter()
+        .position(|token| matches!(token.type_, TokenType::EqualityOperatorToken)) {
         return SyntaxTreeNode {
-            value: None,
+            value: Some("=".to_string()),
             type_: SyntaxTreeNodeType::EqualityCheck,
             children: Vec::from([
                 parse_expression(&expression_tokens[..equality_index]),

@@ -72,7 +72,7 @@ pub fn tokenize(source_code_text: String) -> Vec<Token> {
                 "return"
                     => Token { type_: TokenType::ReturnToken, value: Some(parsed_identifier)},
                 "if" | "else"
-                    => Token { type_: TokenType::BooleanOperationToken, value: Some(parsed_identifier)},
+                    => Token { type_: TokenType::BranchingOperatorToken, value: Some(parsed_identifier)},
                 _ if char::is_numeric(*character)
                     => Token{ type_: TokenType::NumericLiteralToken, value: Some(parsed_identifier)},
                 _

@@ -7,6 +7,9 @@
         List<int> stuff = [1, (1 + 1), 3];
         stuff.AddRange(4, 5);
 
+        if (foo == 6)
+            return foo;
+            
         return stuff;
     }
 
