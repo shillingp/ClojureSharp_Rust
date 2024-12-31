@@ -13,9 +13,9 @@ pub(crate) fn parse(source_tokens: Vec<Token>) -> Result<SyntaxTreeNode, String>
 
     while current_index < source_tokens.len() {
         match (
-            source_tokens.iter().nth(current_index),
-            source_tokens.iter().nth(current_index + 1),
-            source_tokens.iter().nth(current_index + 2),
+            source_tokens.get(current_index),
+            source_tokens.get(current_index + 1),
+            source_tokens.get(current_index + 2),
         ) {
             (Some(first), Some(second), Some(third))
                 if matches!(first.type_, TokenType::TypeDeclarationToken)
@@ -109,11 +109,7 @@ fn parse_method(method_tokens: &[Token]) -> Result<SyntaxTreeNode, String> {
     let method_argument_tokens: &[Token] =
         &method_tokens[(argument_open_parenthesis_index + 1)..argument_close_parenthesis_index];
 
-    let method_scope_open_index: usize = method_tokens
-        .iter()
-        .position(|token| matches!(token.type_, TokenType::OpenScopeToken))
-        .unwrap();
-    let method_body_tokens: &[Token] = &method_tokens[method_scope_open_index + 1..];
+    let method_body_tokens: &[Token] = &method_tokens[argument_close_parenthesis_index + 2..];
 
     let mut method_nodes: Vec<SyntaxTreeNode> = vec![];
     method_nodes.extend(match parse_method_arguments(method_argument_tokens) {
@@ -171,12 +167,14 @@ fn parse_internal_scope(internal_tokens: &[Token]) -> Result<Vec<SyntaxTreeNode>
                         .position(|token| matches!(token.type_, TokenType::SemicolonToken))
                         .unwrap_or(0);
 
-                let open_scope_index: Option<usize> = internal_tokens
+                if internal_tokens
                     .iter()
                     .skip(token_index)
-                    .position(|token| matches!(token.type_, TokenType::OpenScopeToken));
-
-                if open_scope_index.is_some_and(|open| (token_index + open) < end_of_scope_index) {
+                    .position(|token| matches!(token.type_, TokenType::OpenScopeToken))
+                    .is_some_and(|open_scope_index| {
+                        (token_index + open_scope_index) < end_of_scope_index
+                    })
+                {
                     end_of_scope_index =
                         find_index_of_last_closing_scope(&internal_tokens, token_index).unwrap();
                 }
