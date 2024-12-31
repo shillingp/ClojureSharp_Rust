@@ -3,7 +3,7 @@ use crate::tokenizer::token::TokenType;
 use std::iter::Peekable;
 use std::slice::Iter;
 
-pub fn tokenize(source_code_text: String) -> Vec<Token> {
+pub fn tokenize(source_code_text: String) -> Result<Vec<Token>, String> {
     let mut token_queue: Vec<Token> = Vec::new();
     let source_queue: Vec<char> = source_code_text.chars().collect::<Vec<char>>();
     let mut source_queue: Peekable<Iter<char>> = source_queue.iter().peekable();
@@ -170,12 +170,12 @@ pub fn tokenize(source_code_text: String) -> Vec<Token> {
                     type_: TokenType::DotMethodToken,
                     value: None,
                 },
-                _ => panic!("Unrecognized character '{}'.", *character),
+                _ => return Err(format!("Unrecognized character '{}'.", *character)),
             });
         }
     }
 
-    token_queue
+    Ok(token_queue)
 }
 
 fn is_generic_type(text_value: &str) -> bool {

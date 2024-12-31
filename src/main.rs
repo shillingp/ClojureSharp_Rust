@@ -14,14 +14,18 @@ fn main() {
     let contents: String =
         fs::read_to_string(input_file_path).expect("Should have been able to read the file");
 
-    let source_code_tokens: Vec<Token> = tokenizer::tokenizer::tokenize(contents);
+    let source_code_tokens: Vec<Token> = match tokenizer::tokenizer::tokenize(contents) {
+        Ok(tokens) => tokens,
+        Err(error) => panic!("Failed to tokenize source code\n{}", error),
+    };
 
-    let abstract_syntax_tree: Result<SyntaxTreeNode, String> =
-        syntax_tree::syntax_tree_builder::parse(source_code_tokens);
+    let abstract_syntax_tree: SyntaxTreeNode =
+        match syntax_tree::syntax_tree_builder::parse(source_code_tokens) {
+            Ok(tree) => tree,
+            Err(error) => panic!("Failed to parse abstract syntax tree\n{}", error),
+        };
 
-    let transpiled_code: String = transpiler::transpiler::transpile(
-        abstract_syntax_tree.expect("Failed to parse abstract syntax tree"),
-    );
+    let transpiled_code: String = transpiler::transpiler::transpile(abstract_syntax_tree);
 
     let prettifier = transpiler::prettifier::Prettifier::new(' ', 4);
     let pretty_transpiled_code: String = prettifier.prettify(transpiled_code);

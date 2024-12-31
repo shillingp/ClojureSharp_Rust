@@ -5,7 +5,7 @@ pub(crate) fn parse(source_tokens: Vec<Token>) -> Result<SyntaxTreeNode, String>
     if !matches!(source_tokens[0].type_, TokenType::NamespaceToken)
         || !matches!(source_tokens[1].type_, TokenType::NameIdentifierToken)
     {
-        return Err(String::from("sd"));
+        return Err(String::from("no token namespace found"));
     }
 
     let mut current_index: usize = 0;
@@ -22,8 +22,11 @@ pub(crate) fn parse(source_tokens: Vec<Token>) -> Result<SyntaxTreeNode, String>
                     && matches!(second.type_, TokenType::NameIdentifierToken)
                     && matches!(third.type_, TokenType::OpenParenthesisToken) =>
             {
-                let end_index = find_index_of_last_closing_scope(&source_tokens, current_index)
-                    .expect("scope end location not found");
+                let end_index =
+                    match find_index_of_last_closing_scope(&source_tokens, current_index) {
+                        Some(index) => index,
+                        None => return Err("cannot find end of scope".to_string()),
+                    };
 
                 match parse_method(&source_tokens[current_index..=end_index]) {
                     Ok(valid_node) => {
@@ -50,12 +53,6 @@ pub(crate) fn parse(source_tokens: Vec<Token>) -> Result<SyntaxTreeNode, String>
                     Some(index) => current_index + index,
                     None => source_tokens.len(),
                 };
-                // let semicolon_index = current_index
-                //     + source_tokens
-                //         .iter()
-                //         .skip(current_index)
-                //         .position(|token| matches!(token.type_, TokenType::SemicolonToken))
-                //         .unwrap_or(1);
 
                 match parse_expression(&source_tokens[current_index..semicolon_index]) {
                     Ok(valid_node) => {
@@ -263,29 +260,29 @@ fn parse_expression(expression_tokens: &[Token]) -> Result<SyntaxTreeNode, Strin
 
     if matches!(&expression_tokens[0], Token { type_: TokenType::BranchingOperatorToken, value: Some(i)} if i == "if")
     {
-        if let Some(close_paren_index) = expression_tokens
+        let close_paren_index = expression_tokens
             .iter()
             .position(|token| matches!(token.type_, TokenType::CloseParenthesisToken))
-        {
-            let mut children: Vec<SyntaxTreeNode> = Vec::from([
-                match parse_expression(&expression_tokens[2..close_paren_index]) {
-                    Ok(valid_node) => valid_node,
-                    Err(error) => return Err(error),
-                },
-            ]);
-            children.extend(
-                match parse_internal_scope(&expression_tokens[close_paren_index + 2..]) {
-                    Ok(valid_nodes) => valid_nodes,
-                    Err(error) => return Err(error),
-                },
-            );
+            .unwrap();
 
-            return Ok(SyntaxTreeNode {
-                value: expression_tokens[0].value.clone(),
-                type_: SyntaxTreeNodeType::Branch,
-                children,
-            });
-        }
+        let mut children: Vec<SyntaxTreeNode> = Vec::from([
+            match parse_expression(&expression_tokens[2..close_paren_index]) {
+                Ok(valid_node) => valid_node,
+                Err(error) => return Err(error),
+            },
+        ]);
+        children.extend(
+            match parse_internal_scope(&expression_tokens[close_paren_index + 2..]) {
+                Ok(valid_nodes) => valid_nodes,
+                Err(error) => return Err(error),
+            },
+        );
+
+        return Ok(SyntaxTreeNode {
+            value: expression_tokens[0].value.clone(),
+            type_: SyntaxTreeNodeType::Branch,
+            children,
+        });
     }
 
     if matches!(&expression_tokens[0], Token { type_: TokenType::BranchingOperatorToken, value: Some(i)} if i == "else")
