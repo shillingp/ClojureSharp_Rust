@@ -1,11 +1,13 @@
+use std::fmt::Display;
+
 pub struct Token {
     pub type_: TokenType,
     pub value: Option<String>,
 }
 
-impl ToString for Token {
-    fn to_string(&self) -> String {
-        format!("{{type: {:?}, value: {:?}}}", self.type_, self.value)
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", format!("{{type: {:?}, value: {:?}}}", self.type_, self.value))
     }
 }
 
