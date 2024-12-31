@@ -45,7 +45,7 @@ fn convert_namespace_syntax_tree_node_to_code(syntax_tree_node: &SyntaxTreeNode)
 }
 
 fn convert_method_syntax_tree_node_to_code(syntax_tree_node: &SyntaxTreeNode) -> String {
-    let mut output = String::new();
+    let mut output: String = String::new();
 
     output.push_str("(defn ");
     output.push_str(syntax_tree_node.value.clone().unwrap().as_str());
@@ -85,7 +85,7 @@ fn convert_method_syntax_tree_node_to_code(syntax_tree_node: &SyntaxTreeNode) ->
 }
 
 fn convert_expression_syntax_tree_node_to_code(syntax_tree_node: &SyntaxTreeNode) -> String {
-    let mut output = String::new();
+    let mut output: String = String::new();
 
     output.push_str("(");
     output.push_str(syntax_tree_node.value.clone().unwrap().as_str());
@@ -149,7 +149,7 @@ fn convert_literal_syntax_tree_node_to_code(syntax_tree_node: &SyntaxTreeNode) -
 
 fn convert_branch_syntax_tree_node_to_code(syntax_tree_node: &SyntaxTreeNode) -> String {
     let mut output: String = String::new();
-    let mut index_offset = 0;
+    let mut index_offset: usize = 0;
 
     if syntax_tree_node.value.clone().unwrap() == "if" {
         index_offset = 1;
@@ -191,7 +191,7 @@ fn convert_branch_syntax_tree_node_to_code(syntax_tree_node: &SyntaxTreeNode) ->
 }
 
 fn convert_comment_syntax_tree_node_to_code(syntax_tree_node: &SyntaxTreeNode) -> String {
-    let mut output = String::from(";;");
+    let mut output: String = String::from(";;");
     output.push_str(&syntax_tree_node.value.clone().unwrap().as_str());
     output
 }
@@ -199,7 +199,7 @@ fn convert_comment_syntax_tree_node_to_code(syntax_tree_node: &SyntaxTreeNode) -
 fn convert_collection_syntax_tree_node_to_code(syntax_tree_node: &SyntaxTreeNode) -> String {
     let mut output: String = String::from("[]");
 
-    let collection_body = syntax_tree_node
+    let collection_body: String = syntax_tree_node
         .children
         .iter()
         .map(convert_abstract_syntax_tree_to_code)

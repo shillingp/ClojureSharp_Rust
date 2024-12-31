@@ -198,7 +198,7 @@ fn parse_with_predicate(
     while source_queue.peek().is_some_and(&predicate) {
         parsed_characters.push(*source_queue.next().unwrap());
     }
-    let parsed_string_length = parsed_characters.len();
+    let parsed_string_length: usize = parsed_characters.len();
 
     (parsed_characters, parsed_string_length)
 }
