@@ -12,7 +12,7 @@ impl Prettifier {
     }
 
     pub(crate) fn prettify(&self, transpiled_code: String) -> String {
-        let mut output = String::new();
+        let mut output: String = String::new();
 
         let mut number_of_open_parens: i32 = 0;
 
