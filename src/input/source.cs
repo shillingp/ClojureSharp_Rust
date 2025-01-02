@@ -1,5 +1,10 @@
 ﻿namespace TestNamespace
 {
+    int thing(int a)
+    {
+        return 1 * a + a;
+    }
+
     int ExampleMethod(int a, int b)
     {
         int foo = 6;
@@ -13,12 +18,6 @@
             return foo;
 
         return stuff;
-    }
-
-
-    int thing(int a)
-    {
-        return a + 1;
     }
 
     ExampleMethod(((((1 + 2)))), 2);

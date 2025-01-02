@@ -213,14 +213,13 @@ fn group_consecutive_assignments(body_nodes: Vec<SyntaxTreeNode>) -> Vec<SyntaxT
             j += 1;
         }
 
-        body_nodes_with_compound_assignments.push(if i + 1 == j {
-            body_nodes[i].clone()
-        } else {
-            SyntaxTreeNode {
+        body_nodes_with_compound_assignments.push(match i + 1 == j {
+            true => body_nodes[i].clone(),
+            false => SyntaxTreeNode {
                 value: None,
                 type_: SyntaxTreeNodeType::Assignment,
                 children: Vec::from(&body_nodes[i..j]),
-            }
+            },
         });
 
         i = j;
@@ -367,25 +366,31 @@ fn parse_expression(expression_tokens: &[Token]) -> Result<SyntaxTreeNode, Strin
         });
     }
 
-    if let Some(numeric_operator_index) = expression_tokens
+    if expression_tokens
         .iter()
-        .position(|token| matches!(token.type_, TokenType::NumericOperationToken))
+        .any(|token| matches!(token.type_, TokenType::NumericOperationToken))
     {
-        return Ok(SyntaxTreeNode {
-            value: expression_tokens[numeric_operator_index].value.clone(),
-            type_: SyntaxTreeNodeType::Expression,
-            children: Vec::from([
-                match parse_expression(&expression_tokens[..numeric_operator_index]) {
-                    Ok(valid_node) => valid_node,
-                    Err(error) => return Err(error),
-                },
-                match parse_expression(&expression_tokens[numeric_operator_index + 1..]) {
-                    Ok(valid_node) => valid_node,
-                    Err(error) => return Err(error),
-                },
-            ]),
-        });
+        return parse_numerical_expression(expression_tokens);
     }
+    // if let Some(numeric_operator_index) = expression_tokens
+    //     .iter()
+    //     .position(|token| matches!(token.type_, TokenType::NumericOperationToken))
+    // {
+    //     return Ok(SyntaxTreeNode {
+    //         value: expression_tokens[numeric_operator_index].value.clone(),
+    //         type_: SyntaxTreeNodeType::Expression,
+    //         children: Vec::from([
+    //             match parse_expression(&expression_tokens[..numeric_operator_index]) {
+    //                 Ok(valid_node) => valid_node,
+    //                 Err(error) => return Err(error),
+    //             },
+    //             match parse_expression(&expression_tokens[numeric_operator_index + 1..]) {
+    //                 Ok(valid_node) => valid_node,
+    //                 Err(error) => return Err(error),
+    //             },
+    //         ]),
+    //     });
+    // }
 
     if let Some(equality_index) = expression_tokens
         .iter()
@@ -435,9 +440,40 @@ fn parse_expression(expression_tokens: &[Token]) -> Result<SyntaxTreeNode, Strin
         expression_tokens
             .iter()
             .map(|token| token.to_string())
-            .collect::<Vec<_>>()
+            .collect::<Vec<String>>()
             .join(", ")
     ))
+}
+
+fn parse_numerical_expression(expression_tokens: &[Token]) -> Result<SyntaxTreeNode, String> {
+    let mut numeric_operators: Vec<(usize, &Token)> = expression_tokens
+        .iter()
+        .enumerate()
+        .filter(|(_, token)| matches!(token.type_, TokenType::NumericOperationToken))
+        .collect::<Vec<(usize, &Token)>>();
+
+    numeric_operators.sort_by_key(|(index, token)| match (index, token.value.as_deref()) {
+        (_, Some("/")) => 4,
+        (_, Some("*")) => 3,
+        (_, Some("+")) => 2,
+        (_, Some("-")) => 1,
+        _ => 0,
+    });
+
+    Ok(SyntaxTreeNode {
+        value: numeric_operators[0].1.value.clone(),
+        type_: SyntaxTreeNodeType::Expression,
+        children: Vec::from([
+            match parse_expression(&expression_tokens[..numeric_operators[0].0]) {
+                Ok(valid_node) => valid_node,
+                Err(error) => return Err(error),
+            },
+            match parse_expression(&expression_tokens[numeric_operators[0].0 + 1..]) {
+                Ok(valid_node) => valid_node,
+                Err(error) => return Err(error),
+            },
+        ]),
+    })
 }
 
 fn parse_collection(collection_tokens: &[Token]) -> Result<Vec<SyntaxTreeNode>, String> {
