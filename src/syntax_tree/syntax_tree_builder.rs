@@ -176,7 +176,8 @@ fn parse_internal_scope(internal_tokens: &[Token]) -> Result<Vec<SyntaxTreeNode>
                     })
                 {
                     end_of_scope_index =
-                        find_index_of_last_closing_scope(&internal_tokens, token_index).unwrap();
+                        find_index_of_last_closing_scope(&internal_tokens, token_index)
+                            .expect("Unable to find end of current scope");
                 }
 
                 scope_nodes.push(
@@ -192,8 +193,6 @@ fn parse_internal_scope(internal_tokens: &[Token]) -> Result<Vec<SyntaxTreeNode>
     }
 
     Ok(group_consecutive_assignments(scope_nodes))
-
-    // scope_nodes
 }
 
 fn group_consecutive_assignments(body_nodes: Vec<SyntaxTreeNode>) -> Vec<SyntaxTreeNode> {
