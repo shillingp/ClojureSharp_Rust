@@ -13,7 +13,8 @@ pub mod transpiler;
 fn main() {
     let input_file_path: &Path = Path::new("./src/input/source.cs");
     let contents: String =
-        fs::read_to_string(input_file_path).expect("Should have been able to read the file");
+        fs::read_to_string(input_file_path)
+            .expect("Should have been able to read the file");
 
     let source_code_tokens: Vec<Token> = tokenizer::tokenizer::tokenize(contents)
         .expect("Failed to tokenize source code");
